@@ -1,0 +1,8 @@
+<resources>
+    <declare-styleable name="ExpandoLayout">
+        <attr name="text" format="string" />
+        <attr name="textSize" format="integer" />
+        <attr name="topRowPadding" format="integer" />
+        <attr name="expanded" format="boolean" />
+    </declare-styleable>
+</resources>
