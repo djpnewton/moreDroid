@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    see https://devmaze.wordpress.com/2011/05/22/236/ and
+    http://code.google.com/p/android/issues/detail?id=9656
+    regarding the xmlns:ExpandoLayout namespace declaration
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:ExpandoLayout="http://schemas.android.com/apk/res/com.djpsoft.moreDroidApp"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    <com.djpsoft.moreDroid.ExpandoLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        ExpandoLayout:text="ExpandoLayout #01"
+        ExpandoLayout:textSize="20"
+        android:background="#222222">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="25dip"
+            android:paddingRight="25dip">
+            <CheckBox
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Checkbox #01"/>
+            <Button
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Button #02"/>
+        </LinearLayout>
+    </com.djpsoft.moreDroid.ExpandoLayout>
+    <com.djpsoft.moreDroid.ExpandoLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        ExpandoLayout:text="ExpandoLayout #02"
+        ExpandoLayout:expanded="true"
+        android:background="#333333">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="25dip"
+            android:paddingRight="25dip">
+            <CheckBox
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Checkbox #02"/>
+            </LinearLayout>
+    </com.djpsoft.moreDroid.ExpandoLayout>
+</LinearLayout>
