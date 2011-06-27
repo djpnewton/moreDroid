@@ -1,8 +1,6 @@
 package com.djpsoft.moreDroid;
 
 import com.djpsoft.moreDroid.R;
-import com.djpsoft.moreDroid.R.drawable;
-import com.djpsoft.moreDroid.R.styleable;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -56,7 +54,7 @@ public class ExpandoLayout extends ViewGroup {
         topRow.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         topRow.setPadding(topRowPadding, topRowPadding, topRowPadding, topRowPadding);
         icon = new ImageView(context);
-        icon.setImageResource(R.drawable.expander_ic_minimized);
+        setIconImage();
         icon.setPadding(0, 0, 5, 0);
         topRow.addView(icon);
         TextView tv = new TextView(context);
@@ -76,12 +74,16 @@ public class ExpandoLayout extends ViewGroup {
 
     protected void toggleExpand() {
         expanded = !expanded;
-        if (expanded)
+        setIconImage();
+        requestLayout();
+    }
+
+	private void setIconImage() {
+		if (expanded)
             icon.setImageResource(R.drawable.expander_ic_maximized);
         else
             icon.setImageResource(R.drawable.expander_ic_minimized);
-        requestLayout();
-    }
+	}
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
