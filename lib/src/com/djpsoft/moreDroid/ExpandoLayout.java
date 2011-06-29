@@ -1,10 +1,10 @@
 package com.djpsoft.moreDroid;
 
-import com.djpsoft.moreDroid.R;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -15,17 +15,29 @@ import android.widget.TextView;
 
 public class ExpandoLayout extends ViewGroup {
 
-	public static int DEFAULT_TEXT_SIZE = 17;
-	public static int DEFAULT_TOP_ROW_PADDING = 5;
+    public static int DEFAULT_TEXT_SIZE = 17;
+    public static int DEFAULT_TITLE_ROW_PADDING = 5;
+    public static int DEFAULT_MORE_BAR_HEIGHT = 50;
+    public static String DEFAULT_COMPACT_TEXT = "More";
+    public static String DEFAULT_EXPANDED_TEXT = "Less";
+    public static int DEFAULT_FADE_HEIGHT = 30;
 
     private boolean expanded = false;
     private String text = null;
     private int textSize = DEFAULT_TEXT_SIZE;
-    private int topRowPadding = DEFAULT_TOP_ROW_PADDING;
+    private int titleRowPadding = DEFAULT_TITLE_ROW_PADDING;
+    private boolean moreBar = false;
+    private boolean moreBarOnRight = false;
+    private int moreBarDefaultHeight = DEFAULT_MORE_BAR_HEIGHT;
+    private String compactText = DEFAULT_COMPACT_TEXT;
+    private String expandedText = DEFAULT_EXPANDED_TEXT;
+    private boolean showAndHideChildren = false;
 
     private Context context;
-    private LinearLayout topRow;
+    private LinearLayout titleRow;
     private ImageView icon;
+    private TextView more;
+    private Drawable fade;
 
     public ExpandoLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -35,8 +47,16 @@ public class ExpandoLayout extends ViewGroup {
         try {
             text = a.getString(R.styleable.ExpandoLayout_text);
             textSize = a.getInt(R.styleable.ExpandoLayout_textSize, DEFAULT_TEXT_SIZE);
-            topRowPadding = a.getInt(R.styleable.ExpandoLayout_topRowPadding, DEFAULT_TOP_ROW_PADDING);
+            titleRowPadding = a.getInt(R.styleable.ExpandoLayout_titleRowPadding, DEFAULT_TITLE_ROW_PADDING);
             expanded = a.getBoolean(R.styleable.ExpandoLayout_expanded, false);
+            moreBar = a.getBoolean(R.styleable.ExpandoLayout_moreBar, false);
+            moreBarOnRight = a.getBoolean(R.styleable.ExpandoLayout_moreBarOnRight, false);
+            moreBarDefaultHeight = a.getInt(R.styleable.ExpandoLayout_moreBarDefaultViewHeight, DEFAULT_MORE_BAR_HEIGHT);
+            if (a.hasValue(R.styleable.ExpandoLayout_compactText))
+                compactText = a.getString(R.styleable.ExpandoLayout_compactText);
+            if (a.hasValue(R.styleable.ExpandoLayout_expandedText))
+                expandedText = a.getString(R.styleable.ExpandoLayout_expandedText);
+            showAndHideChildren = a.getBoolean(R.styleable.ExpandoLayout_showAndHideChildren, false);
         } finally {
             a.recycle();
         }
@@ -49,62 +69,119 @@ public class ExpandoLayout extends ViewGroup {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
-        topRow = new LinearLayout(context);
-        topRow.setOrientation(LinearLayout.HORIZONTAL);
-        topRow.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        topRow.setPadding(topRowPadding, topRowPadding, topRowPadding, topRowPadding);
-        icon = new ImageView(context);
-        setIconImage();
-        icon.setPadding(0, 0, 5, 0);
-        topRow.addView(icon);
-        TextView tv = new TextView(context);
-        tv.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.FILL_PARENT));
-        tv.setText(text);
-        tv.setTextSize(textSize);
-        tv.setGravity(Gravity.CENTER_VERTICAL);
-        topRow.addView(tv);
-        addView(topRow, 0);
-        topRow.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleExpand();
+        titleRow = new LinearLayout(context);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
+        titleRow.setPadding(titleRowPadding, titleRowPadding, titleRowPadding, titleRowPadding);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setClickable(true);
+        if (!moreBar) {
+            icon = new ImageView(context);
+            setIconImage();
+            icon.setPadding(0, 0, 5, 0);
+            titleRow.addView(icon);
+            TextView tv = new TextView(context);
+            tv.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+            tv.setText(text);
+            tv.setTextSize(textSize);
+            tv.setGravity(Gravity.CENTER_VERTICAL);
+            titleRow.addView(tv);
+            titleRow.setOnClickListener(new OnClickListener() {
+               @Override
+                public void onClick(View v) {
+                    toggleExpand();
+                }
+            });
+            addView(titleRow, 0);
+        }
+        else {
+            more = new TextView(context);
+            more.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+            setMoreText();
+            titleRow.addView(more);
+            View v = new View(context);
+            v.setBackgroundColor(Color.LTGRAY);
+            v.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, 2));
+            ((LinearLayout.LayoutParams)v.getLayoutParams()).weight = 1;
+            if (moreBarOnRight) {
+                titleRow.addView(v, 0);
+                more.setPadding(5, 0, 0, 0);
             }
-        });
+            else {
+                titleRow.addView(v);
+                more.setPadding(0, 0, 5, 0);
+            }
+            titleRow.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    toggleExpand();
+                }
+            });
+            titleRow.setBackgroundColor(Color.DKGRAY);
+            addView(titleRow);
+            fade = getContext().getResources().getDrawable(R.drawable.scroll_fade);
+        }
     }
 
     protected void toggleExpand() {
         expanded = !expanded;
-        setIconImage();
+        if (!moreBar)
+            setIconImage();
+        else
+            setMoreText();
         requestLayout();
     }
 
-	private void setIconImage() {
-		if (expanded)
+    private void setIconImage() {
+        if (expanded)
             icon.setImageResource(R.drawable.expander_ic_maximized);
         else
             icon.setImageResource(R.drawable.expander_ic_minimized);
-	}
+    }
+
+    private void setMoreText() {
+        if (expanded)
+            more.setText(expandedText);
+        else
+            more.setText(compactText);
+    }
+
+    private boolean isInView(int childIndex, int count) {
+        if (expanded)
+            return true;
+        if (moreBar)
+            return childIndex == count - 1;
+        else
+            return childIndex == 0;
+    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = getPaddingLeft();
         int height = getPaddingTop();
 
-        final int count = expanded ? getChildCount() : 1;
+        final int count = getChildCount();
         for (int i = 0; i < count; i++) {
-            View child = getChildAt(i);
-            measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            if (isInView(i, count)) {
+                View child = getChildAt(i);
+                measureChild(child, widthMeasureSpec, heightMeasureSpec);
 
-            LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            lp.x = getPaddingLeft();
-            lp.y = height;
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                lp.x = getPaddingLeft();
+                lp.y = height;
+                if (moreBar && !expanded)
+                    lp.y += moreBarDefaultHeight;
 
-            width = Math.max(width, getPaddingLeft() + child.getMeasuredWidth());
-            height += child.getMeasuredHeight();
+                width = Math.max(width, getPaddingLeft() + child.getMeasuredWidth());
+                height += child.getMeasuredHeight();
+            }
         }
 
         width += getPaddingLeft() + getPaddingRight();
         height += getPaddingBottom();
+
+        if (moreBar && !expanded)
+            height += moreBarDefaultHeight;
 
         setMeasuredDimension(resolveSize(width, widthMeasureSpec),
                 resolveSize(height, heightMeasureSpec));
@@ -113,13 +190,35 @@ public class ExpandoLayout extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        final int count = expanded ? getChildCount() : 1;
+        final int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            LayoutParams lp = (LayoutParams) child.getLayoutParams();
-            child.layout(lp.x, lp.y,
-                    lp.x + child.getMeasuredWidth(),
-                    lp.y + child.getMeasuredHeight());
+            if (isInView(i, count)) {
+                if (showAndHideChildren)
+                    child.setVisibility(View.VISIBLE);
+                LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                child.layout(lp.x, lp.y,
+                        lp.x + child.getMeasuredWidth(),
+                        lp.y + child.getMeasuredHeight());
+            }
+            else if (showAndHideChildren)
+                child.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        super.draw(canvas);
+        if (moreBar && moreBarDefaultHeight > 0 && !expanded) {
+            final int restoreCount = canvas.save();
+            final int width = getWidth();
+            final int height = getHeight();
+            final int titleRowHeight = titleRow.getHeight();
+            canvas.translate(0, height - titleRowHeight);
+            canvas.rotate(180, width / 2.0f, 0);
+            fade.setBounds(0, 0, width, DEFAULT_FADE_HEIGHT);
+            fade.draw(canvas);
+            canvas.restoreToCount(restoreCount);
         }
     }
 
