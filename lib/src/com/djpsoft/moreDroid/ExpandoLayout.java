@@ -1,16 +1,11 @@
 package com.djpsoft.moreDroid;
 
-import java.lang.reflect.Field;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.PaintDrawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -153,15 +148,6 @@ public class ExpandoLayout extends ViewGroup {
             more.setText(compactText);
     }
 
-    private boolean isInView(int childIndex, int count) {
-        if (expanded)
-            return true;
-        if (moreBar)
-            return childIndex == count - 1;
-        else
-            return childIndex == 0;
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = getPaddingLeft();
@@ -169,24 +155,25 @@ public class ExpandoLayout extends ViewGroup {
 
         final int count = getChildCount();
         for (int i = 0; i < count; i++) {
-            if (isInView(i, count)) {
-                View child = getChildAt(i);
-                measureChild(child, widthMeasureSpec, heightMeasureSpec);
+            View child = getChildAt(i);
+            measureChild(child, widthMeasureSpec, heightMeasureSpec);
 
-                LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                lp.x = getPaddingLeft();
-                lp.y = height;
-                if (moreBar && !expanded)
-                    lp.y += moreBarDefaultHeight;
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            lp.x = getPaddingLeft();
+            lp.y = height;
+            // move the moreBar down enough to partially see the content
+            if (moreBar && !expanded && child == titleRow)
+                lp.y += moreBarDefaultHeight;
 
-                width = Math.max(width, getPaddingLeft() + child.getMeasuredWidth());
+            width = Math.max(width, getPaddingLeft() + child.getMeasuredWidth());
+            if (expanded || child == titleRow)
                 height += child.getMeasuredHeight();
-            }
         }
 
         width += getPaddingLeft() + getPaddingRight();
         height += getPaddingBottom();
 
+        // enlarge the view enough to see the moreBar
         if (moreBar && !expanded)
             height += moreBarDefaultHeight;
 
@@ -194,21 +181,19 @@ public class ExpandoLayout extends ViewGroup {
                 resolveSize(height, heightMeasureSpec));
     }
 
-
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         final int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            if (isInView(i, count)) {
-                if (showAndHideChildren)
-                    child.setVisibility(View.VISIBLE);
-                LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                child.layout(lp.x, lp.y,
-                        lp.x + child.getMeasuredWidth(),
-                        lp.y + child.getMeasuredHeight());
-            }
-            else if (showAndHideChildren)
+            LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            child.layout(lp.x, lp.y,
+                    lp.x + child.getMeasuredWidth(),
+                    lp.y + child.getMeasuredHeight());
+            // hide or show child vies if the 'showAndHideChildren' prop set
+            if (expanded && showAndHideChildren && child != titleRow)
+                child.setVisibility(View.VISIBLE);
+            else if (!expanded && showAndHideChildren && child != titleRow)
                 child.setVisibility(View.GONE);
         }
     }
