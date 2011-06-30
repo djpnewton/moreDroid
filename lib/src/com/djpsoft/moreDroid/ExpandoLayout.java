@@ -117,7 +117,6 @@ public class ExpandoLayout extends ViewGroup {
                     toggleExpand();
                 }
             });
-            titleRow.setBackgroundColor(Color.DKGRAY);
             addView(titleRow);
             fade = getContext().getResources().getDrawable(R.drawable.scroll_fade);
         }
@@ -209,6 +208,7 @@ public class ExpandoLayout extends ViewGroup {
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
+        // draw the fade-in when the moreBar is compacted
         if (moreBar && moreBarDefaultHeight > 0 && !expanded) {
             final int restoreCount = canvas.save();
             final int width = getWidth();
@@ -224,7 +224,20 @@ public class ExpandoLayout extends ViewGroup {
 
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-        return super.drawChild(canvas, child, drawingTime);
+        // Stop child views from drawing underneath the moreBar area
+        if (moreBar && moreBarDefaultHeight > 0 && !expanded
+            && child != titleRow) {
+            final int restoreCount = canvas.save();
+            final int width = getWidth();
+            final int height = getHeight();
+            final int titleRowHeight = titleRow.getHeight();
+            canvas.clipRect(0, 0, width, height - titleRowHeight);
+            boolean res = super.drawChild(canvas, child, drawingTime);
+            canvas.restoreToCount(restoreCount);
+            return res;
+        }
+        else
+            return super.drawChild(canvas, child, drawingTime);
     }
 
     @Override
