@@ -43,9 +43,10 @@
         ExpandoLayout:moreBar="true"
         ExpandoLayout:moreBarOnRight="true"
         ExpandoLayout:moreBarDefaultViewHeight="50"
+        ExpandoLayout:moreBarFadeColor="#333333"
         ExpandoLayout:compactText="More (ExpandoLayout #2)"
         ExpandoLayout:expandedText="Less (ExpandoLayout #2)"
-        ExpandoLayout:expanded="true"
+        ExpandoLayout:expanded="false"
         android:background="#333333">
         <LinearLayout
             android:orientation="vertical"

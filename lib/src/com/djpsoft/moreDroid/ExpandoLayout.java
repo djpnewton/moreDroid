@@ -1,10 +1,16 @@
 package com.djpsoft.moreDroid;
 
+import java.lang.reflect.Field;
+
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.PaintDrawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -18,6 +24,7 @@ public class ExpandoLayout extends ViewGroup {
     public static int DEFAULT_TEXT_SIZE = 17;
     public static int DEFAULT_TITLE_ROW_PADDING = 5;
     public static int DEFAULT_MORE_BAR_HEIGHT = 50;
+    public static int DEFAULT_MORE_BAR_FADE_COLOR = 0x00000;
     public static String DEFAULT_COMPACT_TEXT = "More";
     public static String DEFAULT_EXPANDED_TEXT = "Less";
     public static int DEFAULT_FADE_HEIGHT = 30;
@@ -29,6 +36,7 @@ public class ExpandoLayout extends ViewGroup {
     private boolean moreBar = false;
     private boolean moreBarOnRight = false;
     private int moreBarDefaultHeight = DEFAULT_MORE_BAR_HEIGHT;
+    private int moreBarFadeColor = DEFAULT_MORE_BAR_FADE_COLOR;
     private String compactText = DEFAULT_COMPACT_TEXT;
     private String expandedText = DEFAULT_EXPANDED_TEXT;
     private boolean showAndHideChildren = false;
@@ -37,7 +45,7 @@ public class ExpandoLayout extends ViewGroup {
     private LinearLayout titleRow;
     private ImageView icon;
     private TextView more;
-    private Drawable fade;
+    private Bitmap fade;
 
     public ExpandoLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -52,6 +60,7 @@ public class ExpandoLayout extends ViewGroup {
             moreBar = a.getBoolean(R.styleable.ExpandoLayout_moreBar, false);
             moreBarOnRight = a.getBoolean(R.styleable.ExpandoLayout_moreBarOnRight, false);
             moreBarDefaultHeight = a.getInt(R.styleable.ExpandoLayout_moreBarDefaultViewHeight, DEFAULT_MORE_BAR_HEIGHT);
+            moreBarFadeColor = a.getInt(R.styleable.ExpandoLayout_moreBarFadeColor, DEFAULT_MORE_BAR_FADE_COLOR);
             if (a.hasValue(R.styleable.ExpandoLayout_compactText))
                 compactText = a.getString(R.styleable.ExpandoLayout_compactText);
             if (a.hasValue(R.styleable.ExpandoLayout_expandedText))
@@ -118,7 +127,6 @@ public class ExpandoLayout extends ViewGroup {
                 }
             });
             addView(titleRow);
-            fade = getContext().getResources().getDrawable(R.drawable.scroll_fade);
         }
     }
 
@@ -210,15 +218,36 @@ public class ExpandoLayout extends ViewGroup {
         super.draw(canvas);
         // draw the fade-in when the moreBar is compacted
         if (moreBar && moreBarDefaultHeight > 0 && !expanded) {
-            final int restoreCount = canvas.save();
-            final int width = getWidth();
-            final int height = getHeight();
-            final int titleRowHeight = titleRow.getHeight();
-            canvas.translate(0, height - titleRowHeight);
-            canvas.rotate(180, width / 2.0f, 0);
-            fade.setBounds(0, 0, width, DEFAULT_FADE_HEIGHT);
-            fade.draw(canvas);
-            canvas.restoreToCount(restoreCount);
+            final int height = getHeight() - titleRow.getHeight() - DEFAULT_FADE_HEIGHT;
+            canvas.drawBitmap(fade, 0, height, null);
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w > 0 && h > 0)
+            createFadeBitmap();
+    }
+
+    /**
+     * Here we create the bitmap that will be painted for the fade effect
+     * with a compacted moreBar
+     */
+    private void createFadeBitmap() {
+        int width = getWidth();
+        int height = DEFAULT_FADE_HEIGHT;
+        if (fade == null || fade.getWidth() != width) {
+            fade = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(fade);
+            // draw fade bitmap
+            for (int y = 0; y < height; y++) {
+                Paint paint = new Paint();
+                paint.setColor(moreBarFadeColor);
+                int alpha = (int)((float)y / height * 255);
+                paint.setAlpha(alpha);
+                canvas.drawLine(0, y, width, y + 1, paint);
+            }
         }
     }
 
@@ -272,5 +301,4 @@ public class ExpandoLayout extends ViewGroup {
             super(w, h);
         }
     }
-
 }
