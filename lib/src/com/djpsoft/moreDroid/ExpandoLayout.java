@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.Gravity;
+import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -78,14 +79,17 @@ public class ExpandoLayout extends ViewGroup {
         titleRow.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT));
         titleRow.setPadding(titleRowPadding, titleRowPadding, titleRowPadding, titleRowPadding);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        titleRow.setClickable(true);
+        // TODO: setting this causes the icon drawable to not draw/size properly if it is the
+        //       first numbered drawable (hence the need for the 'aaa' drawable placeholder)
+        titleRow.setBackgroundResource(R.drawable.title_row_bkgnd);
         if (!moreBar) {
             icon = new ImageView(context);
             setIconImage();
+            icon.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
             icon.setPadding(0, 0, 5, 0);
             titleRow.addView(icon);
             TextView tv = new TextView(context);
-            tv.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+            tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
             tv.setText(text);
             tv.setTextSize(textSize);
             tv.setGravity(Gravity.CENTER_VERTICAL);
@@ -132,6 +136,7 @@ public class ExpandoLayout extends ViewGroup {
         else
             setMoreText();
         requestLayout();
+        playSoundEffect(SoundEffectConstants.CLICK);
     }
 
     private void setIconImage() {
