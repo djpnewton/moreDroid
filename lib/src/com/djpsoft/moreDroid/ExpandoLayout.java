@@ -11,11 +11,15 @@ import android.view.Gravity;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Transformation;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class ExpandoLayout extends ViewGroup {
+public class ExpandoLayout extends ViewGroup implements AnimationListener {
 
     public static int DEFAULT_TEXT_SIZE = 17;
     public static int DEFAULT_TITLE_ROW_PADDING = 5;
@@ -36,12 +40,14 @@ public class ExpandoLayout extends ViewGroup {
     private String compactText = DEFAULT_COMPACT_TEXT;
     private String expandedText = DEFAULT_EXPANDED_TEXT;
     private boolean showAndHideChildren = false;
+    private boolean useAnimation = true;
 
     private Context context;
     private LinearLayout titleRow;
     private ImageView icon;
     private TextView more;
     private Bitmap fade;
+    boolean toggleAtAnimationEnd;
 
     public ExpandoLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -130,13 +136,65 @@ public class ExpandoLayout extends ViewGroup {
     }
 
     protected void toggleExpand() {
+        if (useAnimation) {
+            // get start and end dimensions
+            int width = getWidth();
+            int startHeight = getHeight();
+            expanded = !expanded;
+            measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(1000000, MeasureSpec.AT_MOST));
+            int endHeight = getMeasuredHeight();
+            // set measure dimensions back to original to stop flicker
+            //   we will change this again in onAnimationStart
+            expanded = !expanded;
+            measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(1000000, MeasureSpec.AT_MOST));
+            // create animation
+            Animation animation = new ExpandAnimation(this, width, startHeight, endHeight);
+            animation.setInterpolator(new DecelerateInterpolator());
+            animation.setDuration(500L);
+            animation.setAnimationListener(this);
+            startAnimation(animation);
+        }
+        else {
+            setToggleFlagAndGui();
+            requestLayout();
+        }
+
+        // play clicky sound
+        playSoundEffect(SoundEffectConstants.CLICK);
+
+    }
+
+    @Override
+    public void onAnimationStart(Animation animation) {
+        super.onAnimationStart();
+        if (!moreBar || !expanded) {
+            setToggleFlagAndGui();
+            toggleAtAnimationEnd = false;
+        }
+        else
+            toggleAtAnimationEnd = true;
+    }
+
+    @Override
+    public void onAnimationRepeat(Animation animation) {
+    }
+
+    @Override
+    public void onAnimationEnd(Animation animation) {
+        super.onAnimationEnd();
+        if (toggleAtAnimationEnd)
+            setToggleFlagAndGui();
+    }
+
+    private void setToggleFlagAndGui() {
         expanded = !expanded;
+        // toggle icon/text
         if (!moreBar)
             setIconImage();
         else
             setMoreText();
-        requestLayout();
-        playSoundEffect(SoundEffectConstants.CLICK);
     }
 
     private void setIconImage() {
@@ -289,6 +347,42 @@ public class ExpandoLayout extends ViewGroup {
 
         public LayoutParams(int w, int h) {
             super(w, h);
+        }
+    }
+
+    public static class ExpandAnimation extends Animation {
+        private View view;
+        private ViewGroup.LayoutParams lp;
+        private int width, startHeight, endHeight;
+
+        public ExpandAnimation(View view, int width, int startHeight, int endHeight) {
+            this.view = view;
+            this.lp = view.getLayoutParams();
+            this.width = width;
+            this.startHeight = startHeight;
+            this.endHeight = endHeight;
+        }
+
+        public void ResetViewLayout() {
+            view.setLayoutParams(lp);
+            view.requestLayout();
+        }
+
+        @Override
+        protected void applyTransformation(float interpolatedTime, Transformation t) {
+            float dhTotal = endHeight - startHeight;
+            view.setLayoutParams(new LinearLayout.LayoutParams(
+                    width, startHeight + Math.round(dhTotal * interpolatedTime)));
+        }
+
+        @Override
+        public boolean willChangeBounds() {
+            return true;
+        }
+
+        @Override
+        public boolean willChangeTransformationMatrix() {
+            return false;
         }
     }
 }
