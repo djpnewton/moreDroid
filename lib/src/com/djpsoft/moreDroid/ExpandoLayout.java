@@ -49,6 +49,7 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
     private Bitmap fade;
     boolean toggleAtAnimationEnd;
     boolean showHideAtAnimationEnd;
+    boolean firstShowHideCall = true;
 
     public ExpandoLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -263,19 +264,23 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
                     lp.x + child.getMeasuredWidth(),
                     lp.y + child.getMeasuredHeight());
         }
-        if (!useAnimation)
+        if (firstShowHideCall || !useAnimation) {
+            firstShowHideCall = false;
             showHideChildren();
+        }
     }
 
     private void showHideChildren() {
-        final int count = getChildCount();
-        for (int i = 0; i < count; i++) {
-            View child = getChildAt(i);
-            // hide or show child views if the 'showAndHideChildren' prop set
-            if (expanded && showAndHideChildren && child != titleRow)
-                child.setVisibility(View.VISIBLE);
-            else if (!expanded && showAndHideChildren && child != titleRow)
-                child.setVisibility(View.GONE);
+        if (showAndHideChildren) {
+            final int count = getChildCount();
+            for (int i = 0; i < count; i++) {
+                View child = getChildAt(i);
+                // hide or show child views if the 'showAndHideChildren' prop set
+                if (expanded && child != titleRow)
+                    child.setVisibility(View.VISIBLE);
+                else if (!expanded && child != titleRow)
+                    child.setVisibility(View.GONE);
+            }
         }
     }
 
