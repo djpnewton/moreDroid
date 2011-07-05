@@ -48,6 +48,7 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
     private TextView more;
     private Bitmap fade;
     boolean toggleAtAnimationEnd;
+    boolean showHideAtAnimationEnd;
 
     public ExpandoLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -175,6 +176,12 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
         }
         else
             toggleAtAnimationEnd = true;
+        if (expanded) {
+            showHideChildren();
+            showHideAtAnimationEnd = false;
+        }
+        else
+            showHideAtAnimationEnd = true;
     }
 
     @Override
@@ -184,6 +191,8 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
     @Override
     public void onAnimationEnd(Animation animation) {
         super.onAnimationEnd();
+        if (showHideAtAnimationEnd)
+            showHideChildren();
         if (toggleAtAnimationEnd)
             setToggleFlagAndGui();
     }
@@ -253,7 +262,16 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
             child.layout(lp.x, lp.y,
                     lp.x + child.getMeasuredWidth(),
                     lp.y + child.getMeasuredHeight());
-            // hide or show child vies if the 'showAndHideChildren' prop set
+        }
+        if (!useAnimation)
+            showHideChildren();
+    }
+
+    private void showHideChildren() {
+        final int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            View child = getChildAt(i);
+            // hide or show child views if the 'showAndHideChildren' prop set
             if (expanded && showAndHideChildren && child != titleRow)
                 child.setVisibility(View.VISIBLE);
             else if (!expanded && showAndHideChildren && child != titleRow)
