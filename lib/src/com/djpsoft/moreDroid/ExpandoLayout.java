@@ -196,6 +196,7 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
             showHideChildren();
         if (toggleAtAnimationEnd)
             setToggleFlagAndGui();
+        ((ExpandAnimation)animation).ResetViewLayout();
     }
 
     private void setToggleFlagAndGui() {
@@ -377,6 +378,7 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
         private View view;
         private ViewGroup.LayoutParams lp;
         private int width, startHeight, endHeight;
+        boolean reset = false;
 
         public ExpandAnimation(View view, int width, int startHeight, int endHeight) {
             this.view = view;
@@ -387,15 +389,18 @@ public class ExpandoLayout extends ViewGroup implements AnimationListener {
         }
 
         public void ResetViewLayout() {
+            reset = true;
             view.setLayoutParams(lp);
             view.requestLayout();
         }
 
         @Override
         protected void applyTransformation(float interpolatedTime, Transformation t) {
-            float dhTotal = endHeight - startHeight;
-            view.setLayoutParams(new LinearLayout.LayoutParams(
-                    width, startHeight + Math.round(dhTotal * interpolatedTime)));
+            if (!reset) {
+                float dhTotal = endHeight - startHeight;
+                view.setLayoutParams(new LinearLayout.LayoutParams(
+                        width, startHeight + Math.round(dhTotal * interpolatedTime)));
+            }
         }
 
         @Override
